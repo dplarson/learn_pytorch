@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 # - input: corrupted sin(t) signals = sin(t) + noise
 # - organization: match pandas DataFrame
 #
-t = np.linspace(0, 10 * np.pi, 1000)
+t = np.linspace(0, 20 * np.pi, 1000)
 y = np.sin(t)
 x1 = y + (np.random.rand(y.shape[0]) - 0.5)
 x2 = y + (np.random.rand(y.shape[0]) - 0.5)
@@ -68,8 +68,8 @@ inputs = inputs.reshape(batch_size, seq_len, input_size)
 #inputs = np.swapaxes(inputs, 0, 1)
 
 # convert to torch data types
-inputs = torch.autograd.Variable(torch.Tensor(inputs))
-target = torch.autograd.Variable(torch.Tensor(target))
+inputs = torch.autograd.Variable(torch.Tensor(inputs).float()).cuda()
+target = torch.autograd.Variable(torch.Tensor(target).float()).cuda()
 
 
 # RNN model (many-to-one)
@@ -83,10 +83,11 @@ class RNN(nn.Module):
 
     def forward(self, x):
         # Set initial states
-        h0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size))
-        c0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size))
+        h0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).cuda()
+        c0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).cuda()
 
         # Forward propogate RNN
+        #output, (hn, cn) = self.lstm(x, (h0, c0))
         output, _ = self.lstm(x, (h0, c0))
 
         # Decode hidden state of last time step
@@ -96,6 +97,7 @@ class RNN(nn.Module):
 
 # Initialize model
 rnn = RNN(input_size, hidden_size, num_layers, output_size)
+rnn.cuda()
 
 # Loss and Optimizer
 criterion = nn.MSELoss()
@@ -114,9 +116,12 @@ for epoch in range(num_epochs):
     print epoch, loss.data[0]
 
 # final output
-y_true = target.data.numpy()
-y_pred = outputs.data.numpy().flatten()
+y_true = target.data.cpu().numpy()
+y_pred = outputs.data.cpu().numpy().flatten()
+
+rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
 
 plt.plot(y_true, ls='-', c='0.5')
 plt.plot(y_pred, ls='--', c='k')
+plt.title('RMSE = {:.4f}'.format(rmse))
 plt.show()
