@@ -102,7 +102,7 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(rnn.parameters(), lr=1e-3)
 
 # Train the model
-num_epochs = 15
+num_epochs = 100
 for epoch in range(num_epochs):
 
     # Forward + Backward + Optimize
@@ -112,3 +112,11 @@ for epoch in range(num_epochs):
     loss.backward()
     optimizer.step()
     print epoch, loss.data[0]
+
+# final output
+y_true = target.data.numpy()
+y_pred = outputs.data.numpy().flatten()
+
+plt.plot(y_true, ls='-', c='0.5')
+plt.plot(y_pred, ls='--', c='k')
+plt.show()
